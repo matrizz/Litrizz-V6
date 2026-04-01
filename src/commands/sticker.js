@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { downloadMedia } from '../utils/media.js'
 import { videoToSticker } from '../utils/videoToSticker.js'
-import { isValidVideo } from '../utils/videoValidator.js'
+import { Sticker } from 'wa-sticker-formatter'
 
 export async function stickerCommand(sock, message) {
   const msg = message.message
@@ -36,16 +36,28 @@ export async function stickerCommand(sock, message) {
   await downloadMedia(target, input)
 
   if (type === 'image') {
-    // imagem → estático (mantém teu método anterior)
     const { imageToSticker } = await import('../utils/videoToSticker.js')
     await imageToSticker(input, output)
   } else {
-    // vídeo → robusto
     await videoToSticker(input, output)
   }
 
+  const buffer = fs.readFileSync(output)
+
+  const author = `Dono: matrizz | Autor: ${message.pushName || 'user'} | Github: github.com/matrizz`
+  const pack = `Bot Litrizz V6`
+
+  const sticker = new Sticker(buffer, {
+    pack,
+    author,
+    type: 'full',
+    quality: 100
+  })
+
+  const stickerBuffer = await sticker.toBuffer()
+
   await sock.sendMessage(message.key.remoteJid, {
-    sticker: fs.readFileSync(output)
+    sticker: stickerBuffer
   })
 
   fs.unlinkSync(input)

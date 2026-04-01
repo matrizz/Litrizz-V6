@@ -1,14 +1,14 @@
 import { exec } from 'child_process'
 
 export function imageToSticker(input, output) {
-    return new Promise((resolve, reject) => {
-        const cmd = `ffmpeg -i "${input}" -vf "scale=512:512:force_original_aspect_ratio=decrease" -vcodec libwebp -lossless 1 -qscale 100 -preset default -an -vsync 0 "${output}"`
+  return new Promise((resolve, reject) => {
+    const cmd = `ffmpeg -i "${input}" -vf "scale=512:512:force_original_aspect_ratio=decrease" -vcodec libwebp -lossless 1 -qscale 100 -preset default -an -vsync 0 "${output}"`
 
-        exec(cmd, (err) => {
-            if (err) return reject(err)
-            resolve(output)
-        })
+    exec(cmd, (err) => {
+      if (err) return reject(err)
+      resolve(output)
     })
+  })
 }
 
 export function videoToSticker(input, output) {

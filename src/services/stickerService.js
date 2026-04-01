@@ -1,4 +1,3 @@
-import fs from 'fs'
 import { exec } from 'child_process'
 
 export const createSticker = (input, output) => {
