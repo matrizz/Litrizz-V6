@@ -1,3 +1,5 @@
+npm install
+
 if [ -d "auth" ]; then
   
   echo "Pasta 'auth' já existe. Iniciando.."
