@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "pm2 start src/index.js --name Litrizz",
-    "stop": "pm2 stop Litrizz"
+    "start": "pm2 start ./ecosystem.config.cjs",
+    "stop": "pm2 delete Litrizz",
+    "restart": "pm2 restart Litrizz"
   },
   "keywords": [],
   "author": "",
