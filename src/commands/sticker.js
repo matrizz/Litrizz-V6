@@ -1,14 +1,13 @@
 import fs from 'fs'
 import { downloadMedia } from '../utils/media.js'
-import { videoToSticker } from '../utils/videoToSticker.js'
-import { Sticker } from 'wa-sticker-formatter'
+import { toSticker } from '../utils/videoToSticker.js'
+import { addStickerMeta } from '../utils/stickerMetadata.js'
 
 export async function stickerCommand(sock, message) {
   const msg = message.message
 
   const isImage = msg?.imageMessage
   const isVideo = msg?.videoMessage
-
   const quoted = msg?.extendedTextMessage?.contextInfo?.quotedMessage
 
   let target = null
@@ -19,47 +18,36 @@ export async function stickerCommand(sock, message) {
     type = 'image'
   } else if (isVideo) {
     target = message
-    type = 'video'
+    type = msg.videoMessage.gifPlayback ? 'gif' : 'video'
   } else if (quoted?.imageMessage) {
     target = { message: quoted }
     type = 'image'
   } else if (quoted?.videoMessage) {
     target = { message: quoted }
-    type = 'video'
+    type = quoted.videoMessage.gifPlayback ? 'gif' : 'video'
   }
 
   if (!target) return
 
-  const input = `./tmp/${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`
+  const ext = type === 'image' ? 'jpg' : type === 'sticker' ? 'webp' : 'mp4'
+  const input = `./tmp/${Date.now()}.${ext}`
   const output = `./tmp/${Date.now()}.webp`
 
-  await downloadMedia(target, input)
+  try {
+    await downloadMedia(target, input, sock)
+    await toSticker(input, output, type)
+    addStickerMeta(output, {
+      pack: 'Bot Litrizz V6',
+      author: `Dono: matrizz | Autor: ${message.pushName || 'user'} | Github: github.com/matrizz`,
+    })
 
-  if (type === 'image') {
-    const { imageToSticker } = await import('../utils/videoToSticker.js')
-    await imageToSticker(input, output)
-  } else {
-    await videoToSticker(input, output)
+    const buffer = fs.readFileSync(output)
+
+    await sock.sendMessage(message.key.remoteJid, { sticker: buffer })
+  } catch (err) {
+    console.error('[stickerCommand]', err)
+  } finally {
+    if (fs.existsSync(input)) fs.unlinkSync(input)
+    if (fs.existsSync(output)) fs.unlinkSync(output)
   }
-
-  const buffer = fs.readFileSync(output)
-
-  const author = `Dono: matrizz | Autor: ${message.pushName || 'user'} | Github: github.com/matrizz`
-  const pack = `Bot Litrizz V6`
-
-  const sticker = new Sticker(buffer, {
-    pack,
-    author,
-    type: 'full',
-    quality: 100
-  })
-
-  const stickerBuffer = await sticker.toBuffer()
-
-  await sock.sendMessage(message.key.remoteJid, {
-    sticker: stickerBuffer
-  })
-
-  fs.unlinkSync(input)
-  fs.unlinkSync(output)
 }
